@@ -37,6 +37,33 @@
   {% endif %}
 </div>
 
+<section class="panel pad attachments-panel">
+  <div class="panel-title">
+    <div><p class="eyebrow">EVIDENCIAS</p><h2>Archivos adjuntos</h2></div>
+    <span class="attachment-count">{{ ticket.attachments|length }} archivo{{ '' if ticket.attachments|length == 1 else 's' }}</span>
+  </div>
+
+  <div class="attachment-grid">
+    {% for file in ticket.attachments %}
+      <a class="attachment-card" href="{{ url_for('main.download_attachment', attachment_id=file.id) }}">
+        <div class="file-icon">{{ file.original_name.rsplit('.',1)[-1]|upper }}</div>
+        <div><b>{{ file.original_name }}</b><span>{{ (file.size_bytes / 1024)|round(1) }} KB · {{ file.uploaded_by.name }}</span></div>
+      </a>
+    {% else %}
+      <div class="empty-attachment">Todavía no hay evidencias adjuntas.</div>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="{{ url_for('main.upload_attachment', ticket_id=ticket.id) }}" enctype="multipart/form-data" class="upload-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="drop-zone">
+      <input type="file" name="attachment" accept=".png,.jpg,.jpeg,.pdf,.txt" required>
+      <span><b>Agregar evidencia</b><small>PNG, JPG, PDF o TXT · máximo 5 MB</small></span>
+    </label>
+    <button class="btn small">Subir archivo</button>
+  </form>
+</section>
+
 <div class="detail-bottom">
   <section class="panel pad comments">
     <h2>Seguimiento</h2>
