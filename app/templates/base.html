@@ -13,7 +13,9 @@
   <nav>
     <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
     <a href="{{ url_for('main.tickets') }}">Tickets</a>
-    {% if current_user.role == 'admin' %}<a href="{{ url_for('main.users') }}">Usuarios</a>{% endif %}
+    {% if current_user.role == 'admin' %}
+      <a href="{{ url_for('main.admin_panel') }}">Administración</a>
+    {% endif %}
     <a class="btn small" href="{{ url_for('main.new_ticket') }}">+ Nuevo ticket</a>
     <a href="{{ url_for('main.logout') }}">Salir</a>
   </nav>
