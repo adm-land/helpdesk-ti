@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Administración | HelpDesk TI{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow">ADMINISTRACIÓN</p>
+    <h1>Panel general</h1>
+    <p>Vista rápida del estado del soporte, carga de trabajo y actividad reciente.</p>
+  </div>
+  <a class="btn secondary" href="{{ url_for('main.users') }}">Ver usuarios</a>
+</div>
+
+<div class="stats admin-stats">
+  <div class="stat"><span>Usuarios</span><strong>{{ metrics.users }}</strong></div>
+  <div class="stat"><span>Técnicos</span><strong>{{ metrics.technicians }}</strong></div>
+  <div class="stat"><span>Tickets activos</span><strong>{{ metrics.active }}</strong></div>
+  <div class="stat"><span>Resueltos</span><strong>{{ metrics.resolved }}</strong></div>
+  <div class="stat"><span>SLA vencido</span><strong>{{ metrics.overdue }}</strong></div>
+</div>
+
+<div class="admin-grid">
+  <section class="panel pad chart-card">
+    <div class="panel-title"><div><p class="eyebrow">ESTADOS</p><h2>Distribución de tickets</h2></div><strong>{{ metrics.total }} total</strong></div>
+    <div class="donut-wrap">
+      <div class="donut" style="background:conic-gradient(#2457d6 0 {{ chart.new_end }}%, #e09b31 {{ chart.new_end }}% {{ chart.process_end }}%, #22a06b {{ chart.process_end }}% 100%)"><span>{{ metrics.total }}</span></div>
+      <div class="legend">
+        <div><i class="dot blue"></i><span>Nuevos</span><b>{{ status_counts['Nuevo'] }}</b></div>
+        <div><i class="dot amber"></i><span>En proceso</span><b>{{ status_counts['En proceso'] }}</b></div>
+        <div><i class="dot green"></i><span>Resueltos</span><b>{{ status_counts['Resuelto'] }}</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel pad chart-card">
+    <div class="panel-title"><div><p class="eyebrow">CATEGORÍAS</p><h2>Incidencias por tipo</h2></div></div>
+    <div class="bar-chart">
+      {% for item in categories %}
+      <div class="bar-row">
+        <span>{{ item.name }}</span>
+        <div class="bar-track"><i style="width:{{ item.percent }}%"></i></div>
+        <b>{{ item.count }}</b>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<div class="admin-grid second">
+  <section class="panel pad chart-card">
+    <div class="panel-title"><div><p class="eyebrow">EQUIPO</p><h2>Carga de trabajo</h2></div></div>
+    <div class="bar-chart workload">
+      {% for item in workload %}
+      <div class="bar-row">
+        <span>{{ item.name }}</span>
+        <div class="bar-track"><i style="width:{{ item.percent }}%"></i></div>
+        <b>{{ item.count }}</b>
+      </div>
+      {% else %}<p class="muted">No hay técnicos registrados.</p>{% endfor %}
+    </div>
+  </section>
+
+  <section class="panel pad">
+    <div class="panel-title"><div><p class="eyebrow">ACTIVIDAD</p><h2>Últimos movimientos</h2></div></div>
+    <div class="admin-activity">
+      {% for event in recent_events %}
+      <a href="{{ url_for('main.ticket_detail', ticket_id=event.ticket_id) }}">
+        <div><b>#{{ event.ticket_id }} · {{ event.event_type }}</b><span>{{ event.detail }}</span></div>
+        <small>{{ event.created_at.strftime('%d/%m %H:%M') }}</small>
+      </a>
+      {% else %}<p class="muted">Todavía no hay movimientos.</p>{% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
