@@ -2,7 +2,7 @@
 
 Sistema web para registrar y dar seguimiento a incidencias de soporte técnico. Lo hice como proyecto de portafolio para practicar desarrollo web, bases de datos y procesos que se usan en un área de TI.
 
-La idea fue ir más allá de un CRUD básico y agregar funciones que sí tienen sentido en una mesa de ayuda: responsables, prioridades, tiempos de atención, historial de cambios, métricas y exportación de información.
+La idea fue ir más allá de un CRUD básico y agregar funciones que sí tienen sentido en una mesa de ayuda: responsables, prioridades, tiempos de atención, historial de cambios, métricas, evidencias y exportación de información.
 
 ## Funciones principales
 
@@ -12,10 +12,15 @@ La idea fue ir más allá de un CRUD básico y agregar funciones que sí tienen 
 - Asignación de responsables.
 - Comentarios para documentar el seguimiento.
 - Historial de cambios por ticket.
+- Evidencias adjuntas en PNG, JPG, PDF o TXT.
+- Descarga de archivos con control de acceso.
+- Límite de 5 MB por archivo.
 - SLA por prioridad: Alta 4 h, Media 12 h y Baja 24 h.
 - Identificación de tickets vencidos.
 - Tiempo promedio de resolución y tasa de resolución.
 - Dashboard con indicadores.
+- Panel de administración con gráficas de estados, categorías y carga de trabajo.
+- Actividad reciente para el administrador.
 - Búsqueda y filtros.
 - Exportación de tickets a CSV.
 - API REST de consulta en `/api/tickets`.
@@ -102,6 +107,12 @@ Abre `http://127.0.0.1:5000`.
 
 Son cuentas de prueba y no deben usarse fuera de la base de datos de demostración.
 
+## Evidencias adjuntas
+
+Los archivos se guardan dentro de `instance/uploads`, una carpeta que no se versiona en GitHub. El sistema genera un nombre interno distinto al archivo original para evitar choques entre nombres y solo permite descargar una evidencia si el usuario tiene acceso al ticket.
+
+Formatos permitidos: PNG, JPG, JPEG, PDF y TXT.
+
 ## MySQL con Docker
 
 ```bash
@@ -134,7 +145,7 @@ También dejé un workflow de GitHub Actions para ejecutar las pruebas cuando se
 
 ## Siguiente paso
 
-Quiero agregar carga de evidencias a los tickets y notificaciones por correo. También me interesa separar la API en una versión propia si el proyecto sigue creciendo.
+Quiero agregar notificaciones por correo y una vista de reportes por periodo. También quiero seguir mejorando las pruebas para cubrir más casos de permisos y archivos.
 
 ## Autor
 
