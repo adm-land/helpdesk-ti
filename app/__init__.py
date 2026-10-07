@@ -20,9 +20,13 @@ def create_app(test_config=None):
         SECRET_KEY=os.getenv("SECRET_KEY", "dev-key-change-me"),
         SQLALCHEMY_DATABASE_URI=os.getenv("DATABASE_URL", "sqlite:///helpdesk.db"),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        MAX_CONTENT_LENGTH=5 * 1024 * 1024,
+        UPLOAD_FOLDER=os.path.join(app.instance_path, "uploads"),
     )
     if test_config:
         app.config.update(test_config)
+
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
     db.init_app(app)
     login_manager.init_app(app)
