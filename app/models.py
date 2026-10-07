@@ -23,6 +23,7 @@ class User(UserMixin, db.Model):
     assigned_tickets = db.relationship("Ticket", foreign_keys="Ticket.assigned_to_id", back_populates="technician")
     comments = db.relationship("Comment", back_populates="author", cascade="all, delete-orphan")
     events = db.relationship("TicketEvent", back_populates="actor")
+    attachments = db.relationship("Attachment", back_populates="uploaded_by")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -53,6 +54,7 @@ class Ticket(db.Model):
     technician = db.relationship("User", foreign_keys=[assigned_to_id], back_populates="assigned_tickets")
     comments = db.relationship("Comment", back_populates="ticket", cascade="all, delete-orphan", order_by="Comment.created_at")
     events = db.relationship("TicketEvent", back_populates="ticket", cascade="all, delete-orphan", order_by="TicketEvent.created_at")
+    attachments = db.relationship("Attachment", back_populates="ticket", cascade="all, delete-orphan", order_by="Attachment.created_at")
 
     def set_sla_deadline(self, base_time=None):
         start = base_time or self.created_at or datetime.utcnow()
@@ -90,3 +92,17 @@ class TicketEvent(db.Model):
 
     ticket = db.relationship("Ticket", back_populates="events")
     actor = db.relationship("User", back_populates="events")
+
+
+class Attachment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    original_name = db.Column(db.String(255), nullable=False)
+    stored_name = db.Column(db.String(255), unique=True, nullable=False)
+    mime_type = db.Column(db.String(120), nullable=False)
+    size_bytes = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    ticket_id = db.Column(db.Integer, db.ForeignKey("ticket.id"), nullable=False)
+    uploaded_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    ticket = db.relationship("Ticket", back_populates="attachments")
+    uploaded_by = db.relationship("User", back_populates="attachments")
