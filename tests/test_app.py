@@ -35,6 +35,14 @@ def create_ticket(client):
     }, follow_redirects=True)
 
 
+def test_health(tmp_path):
+    app = make_app(tmp_path)
+    client = app.test_client()
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.get_json()["status"] == "ok"
+
+
 def test_home_and_login(tmp_path):
     app = make_app(tmp_path)
     create_admin(app)

@@ -39,6 +39,7 @@ La idea fue ir más allá de un CRUD básico y agregar funciones que sí tienen 
 - Docker Compose
 - Pytest
 - GitHub Actions
+- Gunicorn
 
 ## Estructura
 
@@ -48,13 +49,17 @@ helpdesk-ti/
 │   ├── static/
 │   ├── templates/
 │   ├── __init__.py
+│   ├── demo_data.py
 │   ├── models.py
 │   └── routes.py
 ├── tests/
+├── bootstrap.py
 ├── docker-compose.yml
+├── render.yaml
 ├── requirements.txt
 ├── run.py
-└── seed.py
+├── seed.py
+└── wsgi.py
 ```
 
 ## Ejecutarlo con SQLite
@@ -135,6 +140,12 @@ python run.py
 
 `seed.py` recrea la base de datos de demostración, por lo que elimina los datos anteriores.
 
+## Demo pública
+
+El repositorio ya incluye `render.yaml`, Gunicorn y una ruta `/health` para publicarlo en Render. La demo gratuita usa SQLite y almacenamiento temporal para las evidencias. Si Render recrea la instancia, `bootstrap.py` vuelve a cargar los usuarios y tickets de ejemplo automáticamente.
+
+Para un sistema real usaría una base de datos administrada y almacenamiento persistente para los archivos. Para el portafolio prefiero mantener la demo sencilla y sin costos.
+
 ## Pruebas
 
 ```bash
@@ -143,9 +154,9 @@ python -m pytest -q
 
 También dejé un workflow de GitHub Actions para ejecutar las pruebas cuando se suben cambios a `main`.
 
-## Siguiente paso
+## Mejoras futuras
 
-Quiero agregar notificaciones por correo y una vista de reportes por periodo. También quiero seguir mejorando las pruebas para cubrir más casos de permisos y archivos.
+El proyecto ya cubre el flujo principal de una mesa de ayuda. Como mejoras futuras dejaría notificaciones por correo, reportes por periodo y almacenamiento de archivos en un servicio externo.
 
 ## Autor
 

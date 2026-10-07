@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: helpdesk-ti-alan
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bootstrap.py && gunicorn --bind 0.0.0.0:$PORT wsgi:app
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.15
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:////tmp/helpdesk.db
+      - key: UPLOAD_FOLDER
+        value: /tmp/helpdesk_uploads
