@@ -13,6 +13,7 @@
   <nav>
     <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
     <a href="{{ url_for('main.tickets') }}">Tickets</a>
+    {% if current_user.role == 'admin' %}<a href="{{ url_for('main.users') }}">Usuarios</a>{% endif %}
     <a class="btn small" href="{{ url_for('main.new_ticket') }}">+ Nuevo ticket</a>
     <a href="{{ url_for('main.logout') }}">Salir</a>
   </nav>
@@ -24,6 +25,6 @@
   {% endwith %}
   {% block content %}{% endblock %}
 </main>
-<footer>Proyecto académico · Gestión de incidencias de soporte TI</footer>
+<footer>Proyecto de portafolio · Gestión de incidencias de soporte TI</footer>
 </body>
 </html>

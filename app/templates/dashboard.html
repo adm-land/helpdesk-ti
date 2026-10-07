@@ -1,16 +1,59 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard | HelpDesk TI{% endblock %}
 {% block content %}
-<div class="page-head"><div><p class="eyebrow">RESUMEN</p><h1>Hola, {{ current_user.name }}</h1></div><a class="btn" href="{{ url_for('main.new_ticket') }}">Crear ticket</a></div>
-<div class="stats">
+<div class="page-head">
+  <div>
+    <p class="eyebrow">RESUMEN</p>
+    <h1>Hola, {{ current_user.name }}</h1>
+    <p>Estado general de las incidencias y tiempos de atención.</p>
+  </div>
+  <a class="btn" href="{{ url_for('main.new_ticket') }}">Crear ticket</a>
+</div>
+
+<div class="stats stats-main">
   <div class="stat"><span>Total</span><strong>{{ stats.total }}</strong></div>
   <div class="stat"><span>Nuevos</span><strong>{{ stats.nuevo }}</strong></div>
   <div class="stat"><span>En proceso</span><strong>{{ stats.proceso }}</strong></div>
   <div class="stat"><span>Resueltos</span><strong>{{ stats.resuelto }}</strong></div>
-  <div class="stat"><span>Prioridad alta</span><strong>{{ stats.alta }}</strong></div>
+  <div class="stat"><span>SLA vencido</span><strong>{{ stats.vencidos }}</strong></div>
 </div>
-<section class="panel"><div class="panel-head"><h2>Actividad reciente</h2><a href="{{ url_for('main.tickets') }}">Ver todos</a></div>
-<table><thead><tr><th>ID</th><th>Asunto</th><th>Prioridad</th><th>Estado</th><th>Responsable</th></tr></thead><tbody>
-{% for t in recent %}<tr><td>#{{ t.id }}</td><td><a href="{{ url_for('main.ticket_detail', ticket_id=t.id) }}">{{ t.title }}</a></td><td><span class="badge {{ t.priority|lower }}">{{ t.priority }}</span></td><td>{{ t.status }}</td><td>{{ t.technician.name if t.technician else 'Sin asignar' }}</td></tr>{% else %}<tr><td colspan="5">Aún no hay tickets.</td></tr>{% endfor %}
-</tbody></table></section>
+
+<div class="insights">
+  <div class="insight">
+    <span>Tasa de resolución</span>
+    <strong>{{ stats.tasa_resolucion }}%</strong>
+    <div class="progress"><i style="width: {{ stats.tasa_resolucion }}%"></i></div>
+  </div>
+  <div class="insight">
+    <span>Tiempo promedio de resolución</span>
+    <strong>{{ stats.promedio_resolucion }} h</strong>
+    <small>Calculado con los tickets resueltos.</small>
+  </div>
+  <div class="insight">
+    <span>Prioridad alta</span>
+    <strong>{{ stats.alta }}</strong>
+    <small>Incidencias que requieren atención rápida.</small>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-head"><h2>Actividad reciente</h2><a href="{{ url_for('main.tickets') }}">Ver todos</a></div>
+  <table>
+    <thead><tr><th>ID</th><th>Asunto</th><th>Prioridad</th><th>Estado</th><th>SLA</th><th>Responsable</th></tr></thead>
+    <tbody>
+    {% for t in recent %}
+      <tr>
+        <td>#{{ t.id }}</td>
+        <td><a href="{{ url_for('main.ticket_detail', ticket_id=t.id) }}">{{ t.title }}</a></td>
+        <td><span class="badge {{ t.priority|lower }}">{{ t.priority }}</span></td>
+        <td>{{ t.status }}</td>
+        <td><span class="sla {{ 'late' if t.is_overdue else 'ok' }}">{{ 'Vencido' if t.is_overdue else ('Cumplido' if t.status == 'Resuelto' else 'En tiempo') }}</span></td>
+        <td>{{ t.technician.name if t.technician else 'Sin asignar' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6">Aún no hay tickets.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
 {% endblock %}

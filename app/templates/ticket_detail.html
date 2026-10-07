@@ -1,9 +1,65 @@
 {% extends 'base.html' %}
 {% block title %}Ticket #{{ ticket.id }} | HelpDesk TI{% endblock %}
 {% block content %}
-<div class="page-head"><div><p class="eyebrow">TICKET #{{ ticket.id }}</p><h1>{{ ticket.title }}</h1><p>Creado por {{ ticket.creator.name }} · {{ ticket.created_at.strftime('%d/%m/%Y %H:%M') }}</p></div><span class="badge {{ ticket.priority|lower }} big">{{ ticket.priority }}</span></div>
-<div class="detail-grid"><section class="panel pad"><h2>Descripción</h2><p class="ticket-text">{{ ticket.description }}</p><div class="meta"><div><span>Categoría</span><b>{{ ticket.category }}</b></div><div><span>Estado</span><b>{{ ticket.status }}</b></div><div><span>Técnico</span><b>{{ ticket.technician.name if ticket.technician else 'Sin asignar' }}</b></div></div></section>
-{% if current_user.is_staff %}<aside class="panel pad"><h2>Gestión</h2><form method="post" action="{{ url_for('main.manage_ticket', ticket_id=ticket.id) }}" class="form compact"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Estado<select name="status">{% for s in ['Nuevo','En proceso','Resuelto'] %}<option {{ 'selected' if ticket.status==s }}>{{ s }}</option>{% endfor %}</select></label><label>Prioridad<select name="priority">{% for p in ['Baja','Media','Alta'] %}<option {{ 'selected' if ticket.priority==p }}>{{ p }}</option>{% endfor %}</select></label><label>Asignar a<select name="assigned_to_id"><option value="">Sin asignar</option>{% for u in technicians %}<option value="{{ u.id }}" {{ 'selected' if ticket.assigned_to_id==u.id }}>{{ u.name }}</option>{% endfor %}</select></label><button class="btn small">Guardar cambios</button></form></aside>{% endif %}</div>
-<section class="panel pad comments"><h2>Seguimiento</h2>{% for c in ticket.comments %}<div class="comment"><div><b>{{ c.author.name }}</b><span>{{ c.created_at.strftime('%d/%m/%Y %H:%M') }}</span></div><p>{{ c.body }}</p></div>{% else %}<p class="muted">Todavía no hay comentarios.</p>{% endfor %}<form method="post" class="form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Agregar comentario<textarea name="comment" rows="3" placeholder="Escribe una actualización o solución..."></textarea></label><button class="btn small">Publicar comentario</button></form></section>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">TICKET #{{ ticket.id }}</p>
+    <h1>{{ ticket.title }}</h1>
+    <p>Creado por {{ ticket.creator.name }} · {{ ticket.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+  </div>
+  <span class="badge {{ ticket.priority|lower }} big">{{ ticket.priority }}</span>
+</div>
+
+<div class="detail-grid">
+  <section class="panel pad">
+    <h2>Descripción</h2>
+    <p class="ticket-text">{{ ticket.description }}</p>
+    <div class="meta meta-four">
+      <div><span>Categoría</span><b>{{ ticket.category }}</b></div>
+      <div><span>Estado</span><b>{{ ticket.status }}</b></div>
+      <div><span>Técnico</span><b>{{ ticket.technician.name if ticket.technician else 'Sin asignar' }}</b></div>
+      <div><span>Límite SLA</span><b>{{ ticket.sla_due_at.strftime('%d/%m/%Y %H:%M') if ticket.sla_due_at else 'Sin definir' }}</b><small class="sla {{ 'late' if ticket.is_overdue else 'ok' }}">{{ 'Vencido' if ticket.is_overdue else ('Cumplido' if ticket.status == 'Resuelto' else 'En tiempo') }}</small></div>
+    </div>
+    {% if ticket.resolution_hours is not none %}<p class="resolution-note">Tiempo de resolución: <b>{{ ticket.resolution_hours }} horas</b></p>{% endif %}
+  </section>
+
+  {% if current_user.is_staff %}
+  <aside class="panel pad">
+    <h2>Gestión</h2>
+    <form method="post" action="{{ url_for('main.manage_ticket', ticket_id=ticket.id) }}" class="form compact">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Estado<select name="status">{% for s in ['Nuevo','En proceso','Resuelto'] %}<option {{ 'selected' if ticket.status==s }}>{{ s }}</option>{% endfor %}</select></label>
+      <label>Prioridad<select name="priority">{% for p in ['Baja','Media','Alta'] %}<option {{ 'selected' if ticket.priority==p }}>{{ p }}</option>{% endfor %}</select></label>
+      <label>Asignar a<select name="assigned_to_id"><option value="">Sin asignar</option>{% for u in technicians %}<option value="{{ u.id }}" {{ 'selected' if ticket.assigned_to_id==u.id }}>{{ u.name }}</option>{% endfor %}</select></label>
+      <button class="btn small">Guardar cambios</button>
+    </form>
+  </aside>
+  {% endif %}
+</div>
+
+<div class="detail-bottom">
+  <section class="panel pad comments">
+    <h2>Seguimiento</h2>
+    {% for c in ticket.comments %}
+      <div class="comment"><div><b>{{ c.author.name }}</b><span>{{ c.created_at.strftime('%d/%m/%Y %H:%M') }}</span></div><p>{{ c.body }}</p></div>
+    {% else %}<p class="muted">Todavía no hay comentarios.</p>{% endfor %}
+    <form method="post" class="form comment-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Agregar comentario<textarea name="comment" rows="3" placeholder="Escribe una actualización o solución..."></textarea></label>
+      <button class="btn small">Publicar comentario</button>
+    </form>
+  </section>
+
+  <section class="panel pad">
+    <h2>Historial</h2>
+    <div class="timeline">
+    {% for event in ticket.events %}
+      <div class="timeline-item">
+        <i></i>
+        <div><b>{{ event.event_type }}</b><p>{{ event.detail }}</p><span>{{ event.actor.name }} · {{ event.created_at.strftime('%d/%m/%Y %H:%M') }}</span></div>
+      </div>
+    {% else %}<p class="muted">Sin movimientos registrados.</p>{% endfor %}
+    </div>
+  </section>
+</div>
 {% endblock %}
