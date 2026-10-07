@@ -1,18 +1,22 @@
 import csv
 import io
+import uuid
 from datetime import datetime
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, Response, jsonify
+from pathlib import Path
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, Response, jsonify, current_app, send_from_directory
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import or_
+from werkzeug.utils import secure_filename
 from . import db
-from .models import User, Ticket, Comment, TicketEvent
+from .models import User, Ticket, Comment, TicketEvent, Attachment
 
 bp = Blueprint("main", __name__)
 
 VALID_STATUS = {"Nuevo", "En proceso", "Resuelto"}
 VALID_PRIORITY = {"Baja", "Media", "Alta"}
 VALID_CATEGORY = {"Software", "Hardware", "Red", "Acceso", "Otro"}
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "pdf", "txt"}
 
 
 def staff_required(view):
@@ -41,6 +45,10 @@ def visible_tickets():
     return Ticket.query.filter_by(created_by_id=current_user.id)
 
 
+def can_view_ticket(ticket):
+    return current_user.is_staff or ticket.created_by_id == current_user.id
+
+
 def filtered_tickets(query):
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "").strip()
@@ -52,6 +60,10 @@ def filtered_tickets(query):
     if priority in VALID_PRIORITY:
         query = query.filter_by(priority=priority)
     return query
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @bp.route("/")
@@ -146,7 +158,7 @@ def new_ticket():
 @login_required
 def ticket_detail(ticket_id):
     ticket = db.get_or_404(Ticket, ticket_id)
-    if not current_user.is_staff and ticket.created_by_id != current_user.id:
+    if not can_view_ticket(ticket):
         abort(403)
 
     if request.method == "POST":
@@ -160,6 +172,59 @@ def ticket_detail(ticket_id):
 
     technicians = User.query.filter(User.role.in_(["technician", "admin"])).order_by(User.name).all()
     return render_template("ticket_detail.html", ticket=ticket, technicians=technicians)
+
+
+@bp.route("/tickets/<int:ticket_id>/attachments", methods=["POST"])
+@login_required
+def upload_attachment(ticket_id):
+    ticket = db.get_or_404(Ticket, ticket_id)
+    if not can_view_ticket(ticket):
+        abort(403)
+
+    file = request.files.get("attachment")
+    if not file or not file.filename:
+        flash("Selecciona un archivo para adjuntar.", "danger")
+        return redirect(url_for("main.ticket_detail", ticket_id=ticket.id))
+    if not allowed_file(file.filename):
+        flash("Formato no permitido. Usa PNG, JPG, PDF o TXT.", "danger")
+        return redirect(url_for("main.ticket_detail", ticket_id=ticket.id))
+
+    original_name = secure_filename(file.filename)
+    extension = original_name.rsplit(".", 1)[1].lower()
+    stored_name = f"{uuid.uuid4().hex}.{extension}"
+    upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    target = upload_dir / stored_name
+    file.save(target)
+
+    attachment = Attachment(
+        original_name=original_name,
+        stored_name=stored_name,
+        mime_type=file.mimetype or "application/octet-stream",
+        size_bytes=target.stat().st_size,
+        ticket=ticket,
+        uploaded_by=current_user,
+    )
+    ticket.updated_at = datetime.utcnow()
+    db.session.add(attachment)
+    db.session.add(TicketEvent(event_type="Adjunto", detail=f"Archivo agregado: {original_name}", ticket=ticket, actor=current_user))
+    db.session.commit()
+    flash("Archivo adjuntado.", "success")
+    return redirect(url_for("main.ticket_detail", ticket_id=ticket.id))
+
+
+@bp.route("/attachments/<int:attachment_id>")
+@login_required
+def download_attachment(attachment_id):
+    attachment = db.get_or_404(Attachment, attachment_id)
+    if not can_view_ticket(attachment.ticket):
+        abort(403)
+    return send_from_directory(
+        current_app.config["UPLOAD_FOLDER"],
+        attachment.stored_name,
+        as_attachment=True,
+        download_name=attachment.original_name,
+    )
 
 
 @bp.route("/tickets/<int:ticket_id>/manage", methods=["POST"])
@@ -253,9 +318,60 @@ def api_tickets():
             "sla_due_at": t.sla_due_at.isoformat() if t.sla_due_at else None,
             "overdue": t.is_overdue,
             "resolved_at": t.resolved_at.isoformat() if t.resolved_at else None,
+            "attachments": len(t.attachments),
         }
         for t in items
     ])
+
+
+@bp.route("/admin")
+@admin_required
+def admin_panel():
+    tickets = Ticket.query.all()
+    users = User.query.all()
+    status_counts = {status: sum(1 for t in tickets if t.status == status) for status in VALID_STATUS}
+    category_counts = {category: sum(1 for t in tickets if t.category == category) for category in VALID_CATEGORY}
+    total = len(tickets)
+    max_category = max(category_counts.values(), default=1) or 1
+
+    technicians = [u for u in users if u.is_staff]
+    workload_raw = []
+    for tech in technicians:
+        count = sum(1 for t in tickets if t.assigned_to_id == tech.id and t.status != "Resuelto")
+        workload_raw.append((tech.name, count))
+    max_workload = max((count for _, count in workload_raw), default=1) or 1
+
+    new_pct = round((status_counts["Nuevo"] / total) * 100, 1) if total else 0
+    process_pct = round((status_counts["En proceso"] / total) * 100, 1) if total else 0
+
+    metrics = {
+        "users": len(users),
+        "technicians": len(technicians),
+        "active": sum(1 for t in tickets if t.status != "Resuelto"),
+        "resolved": status_counts["Resuelto"],
+        "overdue": sum(1 for t in tickets if t.is_overdue),
+        "total": total,
+    }
+    categories = [
+        {"name": name, "count": count, "percent": round((count / max_category) * 100)}
+        for name, count in sorted(category_counts.items(), key=lambda item: item[1], reverse=True)
+    ]
+    workload = [
+        {"name": name, "count": count, "percent": round((count / max_workload) * 100)}
+        for name, count in sorted(workload_raw, key=lambda item: item[1], reverse=True)
+    ]
+    chart = {"new_end": new_pct, "process_end": min(100, new_pct + process_pct)}
+    recent_events = TicketEvent.query.order_by(TicketEvent.created_at.desc()).limit(8).all()
+
+    return render_template(
+        "admin.html",
+        metrics=metrics,
+        status_counts=status_counts,
+        categories=categories,
+        workload=workload,
+        chart=chart,
+        recent_events=recent_events,
+    )
 
 
 @bp.route("/admin/users")
