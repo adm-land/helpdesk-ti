@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo ticket | HelpDesk TI{% endblock %}
+{% block content %}
+<div class="form-card"><p class="eyebrow">NUEVA INCIDENCIA</p><h1>Crear ticket</h1><form method="post" class="form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Asunto<input name="title" maxlength="150" required placeholder="Ej. No puedo acceder al correo"></label><label>Categoría<select name="category"><option>Software</option><option>Hardware</option><option>Red</option><option>Acceso</option><option>Otro</option></select></label><label>Prioridad<select name="priority"><option>Baja</option><option selected>Media</option><option>Alta</option></select></label><label>Descripción<textarea name="description" rows="7" required placeholder="Describe el problema, cuándo comenzó y qué intentaste hacer..."></textarea></label><button class="btn">Registrar ticket</button></form></div>
+{% endblock %}

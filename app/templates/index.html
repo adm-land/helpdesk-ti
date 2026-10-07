@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}HelpDesk TI{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">SOPORTE · TICKETS · CONTROL</p>
+    <h1>Una mesa de ayuda TI simple, clara y orientada a equipos reales.</h1>
+    <p>Registra incidencias, prioriza problemas, asigna técnicos y da seguimiento desde un mismo lugar.</p>
+    <a class="btn" href="{{ url_for('main.login') }}">Entrar al sistema</a>
+  </div>
+  <div class="hero-card">
+    <h3>Flujo de trabajo</h3>
+    <div class="flow"><b>1</b><span>Usuario reporta</span></div>
+    <div class="flow"><b>2</b><span>TI prioriza y asigna</span></div>
+    <div class="flow"><b>3</b><span>Se documenta la solución</span></div>
+    <div class="flow"><b>4</b><span>Ticket resuelto</span></div>
+  </div>
+</section>
+{% endblock %}
