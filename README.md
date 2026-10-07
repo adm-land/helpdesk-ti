@@ -4,6 +4,20 @@ Sistema web para registrar y dar seguimiento a incidencias de soporte técnico. 
 
 La idea fue ir más allá de un CRUD básico y agregar funciones que sí tienen sentido en una mesa de ayuda: responsables, prioridades, tiempos de atención, historial de cambios, métricas, evidencias y exportación de información.
 
+## Demo pública
+
+**Prueba el proyecto:** https://helpdesk-ti-alan.onrender.com
+
+### Usuarios de demostración
+
+| Rol | Correo | Contraseña |
+|---|---|---|
+| Administrador | `admin@helpdesk.local` | `Admin123!` |
+| Técnico | `tecnico@helpdesk.local` | `Tecnico123!` |
+| Usuario | `usuario@helpdesk.local` | `Usuario123!` |
+
+La demo corre en Render con el plan gratuito. Puede tardar unos segundos en despertar si estuvo inactiva. La base SQLite y los adjuntos de la demo son temporales, por lo que pueden reiniciarse cuando Render recrea la instancia.
+
 ## Funciones principales
 
 - Inicio de sesión con roles de usuario, técnico y administrador.
@@ -40,6 +54,7 @@ La idea fue ir más allá de un CRUD básico y agregar funciones que sí tienen 
 - Pytest
 - GitHub Actions
 - Gunicorn
+- Render
 
 ## Estructura
 
@@ -102,16 +117,6 @@ python run.py
 
 Abre `http://127.0.0.1:5000`.
 
-### Usuarios de demostración
-
-| Rol | Correo | Contraseña |
-|---|---|---|
-| Administrador | `admin@helpdesk.local` | `Admin123!` |
-| Técnico | `tecnico@helpdesk.local` | `Tecnico123!` |
-| Usuario | `usuario@helpdesk.local` | `Usuario123!` |
-
-Son cuentas de prueba y no deben usarse fuera de la base de datos de demostración.
-
 ## Evidencias adjuntas
 
 Los archivos se guardan dentro de `instance/uploads`, una carpeta que no se versiona en GitHub. El sistema genera un nombre interno distinto al archivo original para evitar choques entre nombres y solo permite descargar una evidencia si el usuario tiene acceso al ticket.
@@ -140,11 +145,9 @@ python run.py
 
 `seed.py` recrea la base de datos de demostración, por lo que elimina los datos anteriores.
 
-## Demo pública
+## Despliegue
 
-El repositorio ya incluye `render.yaml`, Gunicorn y una ruta `/health` para publicarlo en Render. La demo gratuita usa SQLite y almacenamiento temporal para las evidencias. Si Render recrea la instancia, `bootstrap.py` vuelve a cargar los usuarios y tickets de ejemplo automáticamente.
-
-Para un sistema real usaría una base de datos administrada y almacenamiento persistente para los archivos. Para el portafolio prefiero mantener la demo sencilla y sin costos.
+El repositorio incluye `render.yaml`, Gunicorn y una ruta `/health` para la demo pública en Render. Para un sistema real usaría una base de datos administrada y almacenamiento persistente para los archivos; para el portafolio mantuve la demo sencilla y sin costos.
 
 ## Pruebas
 
